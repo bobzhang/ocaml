@@ -14,33 +14,58 @@
 
 open Misc
 
-type description =
+type 'a description =
   { prim_name: string;         (* Name of primitive  or C function *)
     prim_arity: int;           (* Number of arguments *)
     prim_alloc: bool;          (* Does it allocates or raise? *)
     prim_native_name: string;  (* Name of C function for the nat. code gen. *)
-    prim_native_float: bool }  (* Does the above operate on unboxed floats? *)
+    prim_native_float: bool;
+    prim_attributes: Parsetree.attributes;
 
-let parse_declaration arity decl =
+    prim_ty: 'a
+
+      (* should not be optional, the only missing place 
+          is built in primitives*) 
+  }  (* Does the above operate on unboxed floats? *)
+
+let parse_declaration prim_ty prim_attributes arity decl =
   match decl with
   | name :: "noalloc" :: name2 :: "float" :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = false;
-       prim_native_name = name2; prim_native_float = true}
+       prim_native_name = name2; prim_native_float = true;
+       prim_attributes;
+       prim_ty;
+     }
   | name :: "noalloc" :: name2 :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = false;
-       prim_native_name = name2; prim_native_float = false}
+       prim_native_name = name2; prim_native_float = false;
+       prim_attributes;
+       prim_ty;
+     }
   | name :: name2 :: "float" :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
-       prim_native_name = name2; prim_native_float = true}
+       prim_native_name = name2; prim_native_float = true;
+       prim_attributes;
+       prim_ty;
+     }
   | name :: "noalloc" :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = false;
-       prim_native_name = ""; prim_native_float = false}
+       prim_native_name = ""; prim_native_float = false;
+       prim_attributes;
+       prim_ty;
+     }
   | name :: name2 :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
-       prim_native_name = name2; prim_native_float = false}
+       prim_native_name = name2; prim_native_float = false;
+       prim_attributes;
+       prim_ty;
+     }
   | name :: _ ->
       {prim_name = name; prim_arity = arity; prim_alloc = true;
-       prim_native_name = ""; prim_native_float = false}
+       prim_native_name = ""; prim_native_float = false;
+       prim_attributes;
+       prim_ty;
+     }
   | [] ->
       fatal_error "Primitive.parse_declaration"
 

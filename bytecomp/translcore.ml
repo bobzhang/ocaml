@@ -43,60 +43,60 @@ let transl_object =
 let comparisons_table = create_hashtable 11 [
   "%equal",
       (Pccall{prim_name = "caml_equal"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false ; prim_attributes = [] ; prim_ty = None},
        Pintcomp Ceq,
        Pfloatcomp Ceq,
        Pccall{prim_name = "caml_string_equal"; prim_arity = 2;
               prim_alloc = false;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Ceq),
        Pbintcomp(Pint32, Ceq),
        Pbintcomp(Pint64, Ceq),
        true);
   "%notequal",
       (Pccall{prim_name = "caml_notequal"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pintcomp Cneq,
        Pfloatcomp Cneq,
        Pccall{prim_name = "caml_string_notequal"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Cneq),
        Pbintcomp(Pint32, Cneq),
        Pbintcomp(Pint64, Cneq),
        true);
   "%lessthan",
       (Pccall{prim_name = "caml_lessthan"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pintcomp Clt,
        Pfloatcomp Clt,
        Pccall{prim_name = "caml_string_lessthan"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Clt),
        Pbintcomp(Pint32, Clt),
        Pbintcomp(Pint64, Clt),
        false);
   "%greaterthan",
       (Pccall{prim_name = "caml_greaterthan"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pintcomp Cgt,
        Pfloatcomp Cgt,
        Pccall{prim_name = "caml_string_greaterthan"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Cgt),
        Pbintcomp(Pint32, Cgt),
        Pbintcomp(Pint64, Cgt),
        false);
   "%lessequal",
       (Pccall{prim_name = "caml_lessequal"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pintcomp Cle,
        Pfloatcomp Cle,
        Pccall{prim_name = "caml_string_lessequal"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Cle),
        Pbintcomp(Pint32, Cle),
        Pbintcomp(Pint64, Cle),
@@ -104,48 +104,53 @@ let comparisons_table = create_hashtable 11 [
   "%greaterequal",
       (Pccall{prim_name = "caml_greaterequal"; prim_arity = 2;
               prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pintcomp Cge,
        Pfloatcomp Cge,
        Pccall{prim_name = "caml_string_greaterequal"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pbintcomp(Pnativeint, Cge),
        Pbintcomp(Pint32, Cge),
        Pbintcomp(Pint64, Cge),
        false);
   "%compare",
       (Pccall{prim_name = "caml_compare"; prim_arity = 2; prim_alloc = true;
-              prim_native_name = ""; prim_native_float = false},
+              prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_int_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_float_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_string_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_nativeint_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_int32_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        Pccall{prim_name = "caml_int64_compare"; prim_arity = 2;
               prim_alloc = false; prim_native_name = "";
-              prim_native_float = false},
+              prim_native_float = false; prim_attributes = [] ; prim_ty = None},
        false)
 ]
 
 let primitives_table = create_hashtable 57 [
+  "%bytes_to_string", Pbytes_to_string;
+  "%bytes_of_string", Pbytes_of_string;
+  "%char_to_int", Pchar_to_int;
+  "%char_of_int", Pchar_of_int;
   "%identity", Pidentity;
+  "%mark_ocaml_object", Pmark_ocaml_object;
   "%ignore", Pignore;
   "%field0", Pfield 0;
   "%field1", Pfield 1;
   "%setfield0", Psetfield(0, true);
-  "%makeblock", Pmakeblock(0, Immutable);
-  "%makemutable", Pmakeblock(0, Mutable);
+  "%makeblock", Pmakeblock(0, Lambda.default_tag_info, Immutable);
+  "%makemutable", Pmakeblock(0,Lambda.default_tag_info,  Mutable);
   "%raise", Praise Raise_regular;
   "%reraise", Praise Raise_reraise;
   "%raise_notrace", Praise Raise_notrace;
@@ -198,6 +203,13 @@ let primitives_table = create_hashtable 57 [
   "%string_safe_set", Pstringsets;
   "%string_unsafe_get", Pstringrefu;
   "%string_unsafe_set", Pstringsetu;
+
+  "%bytes_length", Pbyteslength;
+  "%bytes_safe_get", Pbytesrefs;
+  "%bytes_safe_set", Pbytessets;
+  "%bytes_unsafe_get", Pbytesrefu;
+  "%bytes_unsafe_set", Pbytessetu;
+
   "%array_length", Parraylength Pgenarray;
   "%array_safe_get", Parrayrefs Pgenarray;
   "%array_safe_set", Parraysets Pgenarray;
@@ -316,11 +328,11 @@ let primitives_table = create_hashtable 57 [
 
 let prim_makearray =
   { prim_name = "caml_make_vect"; prim_arity = 2; prim_alloc = true;
-    prim_native_name = ""; prim_native_float = false }
+    prim_native_name = ""; prim_native_float = false ; prim_attributes = [] ; prim_ty = None}
 
 let prim_obj_dup =
   { prim_name = "caml_obj_dup"; prim_arity = 1; prim_alloc = true;
-    prim_native_name = ""; prim_native_float = false }
+    prim_native_name = ""; prim_native_float = false ; prim_attributes = [] ; prim_ty = None}
 
 let find_primitive loc prim_name =
   match prim_name with
@@ -421,14 +433,15 @@ let transl_primitive loc p =
       | 1 -> (* TODO: we should issue a warning ? *)
         let param = Ident.create "prim" in
         Lfunction(Curried, [param],
-          Lprim(Pmakeblock(0, Immutable), [lam; Lvar param]))
+          Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), [lam; Lvar param]))
       | _ -> assert false
     end
   | _ ->
       let rec make_params n =
         if n <= 0 then [] else Ident.create "prim" :: make_params (n-1) in
       let params = make_params p.prim_arity in
-      Lfunction(Curried, params,
+      if params = [] then  Lprim(prim,[])
+      else Lfunction(Curried, params,
                 Lprim(prim, List.map (fun id -> Lvar id) params))
 
 (* To check the well-formedness of r.h.s. of "let rec" definitions *)
@@ -460,7 +473,7 @@ let check_recursive_lambda idlist lam =
         let idlist' = add_letrec bindings idlist in
         List.for_all (fun (id, arg) -> check idlist' arg) bindings &&
         check idlist' body
-    | Lprim(Pmakeblock(tag, mut), args) ->
+    | Lprim(Pmakeblock(tag, _,  mut), args) ->
         List.for_all (check idlist) args
     | Lprim(Pmakearray(_), args) ->
         List.for_all (check idlist) args
@@ -608,9 +621,9 @@ let assert_failed exp =
   let (fname, line, char) =
     Location.get_pos_info exp.exp_loc.Location.loc_start in
   Lprim(Praise Raise_regular, [event_after exp
-    (Lprim(Pmakeblock(0, Immutable),
+    (Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
           [transl_normal_path Predef.path_assert_failure;
-           Lconst(Const_block(0,
+           Lconst(Const_block(0, Lambda.default_tag_info,
               [Const_base(Const_string (fname, None));
                Const_base(Const_int line);
                Const_base(Const_int char)]))]))])
@@ -640,7 +653,7 @@ and transl_exp0 e =
     Texp_ident(path, _, {val_kind = Val_prim p}) ->
       let public_send = p.prim_name = "%send" in
       if public_send || p.prim_name = "%sendself" then
-        let kind = if public_send then Public else Self in
+        let kind = if public_send then Public None else Self in
         let obj = Ident.create "obj" and meth = Ident.create "meth" in
         Lfunction(Curried, [obj; meth], Lsend(kind, Lvar meth, Lvar obj, [],
                                               e.exp_loc))
@@ -687,7 +700,7 @@ and transl_exp0 e =
       let public_send = p.prim_name = "%send"
         || not !Clflags.native_code && p.prim_name = "%sendcache"in
       if public_send || p.prim_name = "%sendself" then
-        let kind = if public_send then Public else Self in
+        let kind = if public_send then Public None else Self in
         let obj = List.hd argl in
         wrap (Lsend (kind, List.nth argl 1, obj, [], e.exp_loc))
       else if p.prim_name = "%sendcache" then
@@ -712,7 +725,7 @@ and transl_exp0 e =
           lam_of_loc kind e.exp_loc
         | (Ploc kind, [arg1]) ->
           let lam = lam_of_loc kind arg1.exp_loc in
-          Lprim(Pmakeblock(0, Immutable), lam :: argl)
+          Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), lam :: argl)
         | (Ploc _, _) -> assert false
         | (_, _) ->
             begin match (prim, argl) with
@@ -733,40 +746,43 @@ and transl_exp0 e =
                Matching.for_trywith (Lvar id) (transl_cases_try pat_expr_list))
   | Texp_tuple el ->
       let ll = transl_list el in
+      let tag_info = Lambda.Tuple in 
       begin try
-        Lconst(Const_block(0, List.map extract_constant ll))
+        Lconst(Const_block(0, tag_info, List.map extract_constant ll))
       with Not_constant ->
-        Lprim(Pmakeblock(0, Immutable), ll)
+        Lprim(Pmakeblock(0,  tag_info, Immutable), ll)
       end
   | Texp_construct(_, cstr, args) ->
       let ll = transl_list args in
       begin match cstr.cstr_tag with
         Cstr_constant n ->
-          Lconst(Const_pointer n)
+          Lconst(Const_pointer (n, Lambda.NullConstructor cstr.cstr_name))
       | Cstr_block n ->
+          let tag_info = (Lambda.Constructor cstr.cstr_name) in
           begin try
-            Lconst(Const_block(n, List.map extract_constant ll))
+            Lconst(Const_block(n,tag_info, List.map extract_constant ll))
           with Not_constant ->
-            Lprim(Pmakeblock(n, Immutable), ll)
+            Lprim(Pmakeblock(n, tag_info, Immutable), ll)
           end
       | Cstr_extension(path, is_const) ->
           if is_const then
             transl_path e.exp_env path
           else
-            Lprim(Pmakeblock(0, Immutable),
+            Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
                   transl_path e.exp_env path :: ll)
       end
   | Texp_variant(l, arg) ->
       let tag = Btype.hash_variant l in
       begin match arg with
-        None -> Lconst(Const_pointer tag)
+        None -> Lconst(Const_pointer (tag, Lambda.NullVariant l))
       | Some arg ->
           let lam = transl_exp arg in
+          let tag_info = Lambda.Variant l in
           try
-            Lconst(Const_block(0, [Const_base(Const_int tag);
+            Lconst(Const_block(0, tag_info, [Const_base(Const_int tag);
                                    extract_constant lam]))
           with Not_constant ->
-            Lprim(Pmakeblock(0, Immutable),
+            Lprim(Pmakeblock(0, tag_info, Immutable),
                   [Lconst(Const_base(Const_int tag)); lam])
       end
   | Texp_record ((_, lbl1, _) :: _ as lbl_expr_list, opt_init_expr) ->
@@ -795,7 +811,7 @@ and transl_exp0 e =
         let master =
           match kind with
           | Paddrarray | Pintarray ->
-              Lconst(Const_block(0, cl))
+              Lconst(Const_block(0, Lambda.Array, cl)) (* ATTENTION: ? [|1;2;3;4|]*)
           | Pfloatarray ->
               Lconst(Const_float_array(List.map extract_float cl))
           | Pgenarray ->
@@ -827,13 +843,13 @@ and transl_exp0 e =
           Tmeth_val id -> Lsend (Self, Lvar id, obj, [], e.exp_loc)
         | Tmeth_name nm ->
             let (tag, cache) = Translobj.meth obj nm in
-            let kind = if cache = [] then Public else Cached in
+            let kind = if cache = [] then Public (Some nm) else Cached in
             Lsend (kind, tag, obj, cache, e.exp_loc)
       in
       event_after e lam
   | Texp_new (cl, {Location.loc=loc}, _) ->
       Lapply(Lprim(Pfield 0, [transl_path ~loc e.exp_env cl]),
-             [lambda_unit], Location.none)
+             [lambda_unit], Lambda.default_apply_info ())
   | Texp_instvar(path_self, path, _) ->
       Lprim(Parrayrefu Paddrarray,
             [transl_normal_path path_self; transl_normal_path path])
@@ -843,7 +859,7 @@ and transl_exp0 e =
       let cpy = Ident.create "copy" in
       Llet(Strict, cpy,
            Lapply(Translobj.oo_prim "copy", [transl_normal_path path_self],
-                  Location.none),
+                  Lambda.default_apply_info ()),
            List.fold_right
              (fun (path, _, expr) rem ->
                 Lsequence(transl_setinstvar (Lvar cpy) path expr, rem))
@@ -872,14 +888,14 @@ and transl_exp0 e =
       | Texp_construct (_, {cstr_arity = 0}, _)
         -> transl_exp e
       | Texp_constant(Const_float _) ->
-          Lprim(Pmakeblock(Obj.forward_tag, Immutable), [transl_exp e])
+          Lprim(Pmakeblock(Obj.forward_tag, Lambda.default_tag_info, Immutable), [transl_exp e])
       | Texp_ident(_, _, _) -> (* according to the type *)
           begin match e.exp_type.desc with
           (* the following may represent a float/forward/lazy: need a
              forward_tag *)
           | Tvar _ | Tlink _ | Tsubst _ | Tunivar _
           | Tpoly(_,_) | Tfield(_,_,_,_) ->
-              Lprim(Pmakeblock(Obj.forward_tag, Immutable), [transl_exp e])
+              Lprim(Pmakeblock(Obj.forward_tag, Lambda.default_tag_info, Immutable), [transl_exp e])
           (* the following cannot be represented as float/forward/lazy:
              optimize *)
           | Tarrow(_,_,_,_) | Ttuple _ | Tpackage _ | Tobject(_,_) | Tnil
@@ -901,12 +917,12 @@ and transl_exp0 e =
                 || has_base_type e Predef.path_int64
               then transl_exp e
               else
-                Lprim(Pmakeblock(Obj.forward_tag, Immutable), [transl_exp e])
+                Lprim(Pmakeblock(Obj.forward_tag, Lambda.default_tag_info, Immutable), [transl_exp e])
           end
       (* other cases compile to a lazy block holding a function *)
       | _ ->
           let fn = Lfunction (Curried, [Ident.create "param"], transl_exp e) in
-          Lprim(Pmakeblock(Config.lazy_tag, Mutable), [fn])
+          Lprim(Pmakeblock(Config.lazy_tag, Lambda.default_tag_info, Mutable), [fn])
       end
   | Texp_object (cs, meths) ->
       let cty = cs.cstr_type in
@@ -961,9 +977,9 @@ and transl_apply lam sargs loc =
     | Levent(Lsend(k, lmet, lobj, largs, loc), _) ->
         Lsend(k, lmet, lobj, largs @ args, loc)
     | Lapply(lexp, largs, _) ->
-        Lapply(lexp, largs @ args, loc)
+        Lapply(lexp, largs @ args, Lambda.default_apply_info ~loc ())
     | lexp ->
-        Lapply(lexp, args, loc)
+        Lapply(lexp, args, Lambda.default_apply_info ~loc ())
   in
   let rec build_apply lam args = function
       (None, optional) :: l ->
@@ -1098,12 +1114,12 @@ and transl_record all_labels repres lbl_expr_list opt_init_expr =
         if mut = Mutable then raise Not_constant;
         let cl = List.map extract_constant ll in
         match repres with
-          Record_regular -> Lconst(Const_block(0, cl))
+          Record_regular -> Lconst(Const_block(0, Lambda.Record, cl))
         | Record_float ->
             Lconst(Const_float_array(List.map extract_float cl))
       with Not_constant ->
         match repres with
-          Record_regular -> Lprim(Pmakeblock(0, mut), ll)
+          Record_regular -> Lprim(Pmakeblock(0, Lambda.Record, mut), ll)
         | Record_float -> Lprim(Pmakearray Pfloatarray, ll) in
     begin match opt_init_expr with
       None -> lam

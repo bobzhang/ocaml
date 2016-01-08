@@ -204,14 +204,14 @@ let simplify_exits lam =
         (* Simplify %revapply, for n-ary functions with n > 1 *)
       | Prevapply loc, [x; Lapply(f, args, _)]
       | Prevapply loc, [x; Levent (Lapply(f, args, _),_)] ->
-        Lapply(f, args@[x], loc)
-      | Prevapply loc, [x; f] -> Lapply(f, [x], loc)
+        Lapply(f, args@[x], Lambda.default_apply_info ~loc ())
+      | Prevapply loc, [x; f] -> Lapply(f, [x], Lambda.default_apply_info ~loc ())
 
         (* Simplify %apply, for n-ary functions with n > 1 *)
       | Pdirapply loc, [Lapply(f, args, _); x]
       | Pdirapply loc, [Levent (Lapply(f, args, _),_); x] ->
-        Lapply(f, args@[x], loc)
-      | Pdirapply loc, [f; x] -> Lapply(f, [x], loc)
+        Lapply(f, args@[x], Lambda.default_apply_info ~loc ())
+      | Pdirapply loc, [f; x] -> Lapply(f, [x], Lambda.default_apply_info ~loc ())
 
       | _ -> Lprim(p, ll)
      end
@@ -441,14 +441,14 @@ let simplify_lets lam =
   | Llet(str, v, Lvar w, l2) when optimize ->
       Hashtbl.add subst v (simplif (Lvar w));
       simplif l2
-  | Llet(Strict, v, Lprim(Pmakeblock(0, Mutable), [linit]), lbody)
+  | Llet(Strict, v, Lprim(Pmakeblock(0, tag_info, Mutable), [linit]), lbody)
     when optimize ->
       let slinit = simplif linit in
       let slbody = simplif lbody in
       begin try
        mklet (Variable, v, slinit, eliminate_ref v slbody)
       with Real_reference ->
-        mklet(Strict, v, Lprim(Pmakeblock(0, Mutable), [slinit]), slbody)
+        mklet(Strict, v, Lprim(Pmakeblock(0, tag_info, Mutable), [slinit]), slbody)
       end
   | Llet(Alias, v, l1, l2) ->
       begin match count_var v with
@@ -516,7 +516,7 @@ let rec emit_tail_infos is_tail lambda =
   match lambda with
   | Lvar _ -> ()
   | Lconst _ -> ()
-  | Lapply (func, l, loc) ->
+  | Lapply (func, l, {apply_loc = loc; }) ->
       list_emit_tail_infos false l;
       Stypes.record (Stypes.An_call (loc, call_kind l))
   | Lfunction (_, _, lam) ->
@@ -527,7 +527,7 @@ let rec emit_tail_infos is_tail lambda =
   | Lletrec (bindings, body) ->
       List.iter (fun (_, lam) -> emit_tail_infos false lam) bindings;
       emit_tail_infos is_tail body
-  | Lprim (Pidentity, [arg]) ->
+  | Lprim ((Pidentity | Pbytes_to_string | Pbytes_of_string | Pchar_to_int | Pchar_of_int | Pmark_ocaml_object), [arg]) ->
       emit_tail_infos is_tail arg
   | Lprim (Psequand, [arg1; arg2])
   | Lprim (Psequor, [arg1; arg2]) ->

@@ -31,7 +31,7 @@ let consts : (structured_constant, Ident.t) Hashtbl.t = Hashtbl.create 17
 
 let share c =
   match c with
-    Const_block (n, l) when l <> [] ->
+    Const_block (n, _,  l) when l <> [] ->
       begin try
         Lvar (Hashtbl.find consts c)
       with Not_found ->
@@ -91,7 +91,7 @@ let int n = Lconst (Const_base (Const_int n))
 
 let prim_makearray =
   { prim_name = "caml_make_vect"; prim_arity = 2; prim_alloc = true;
-    prim_native_name = ""; prim_native_float = false }
+    prim_native_name = ""; prim_native_float = false ; prim_attributes = [] ; prim_ty = None}
 
 (* Also use it for required globals *)
 let transl_label_init expr =
@@ -150,7 +150,7 @@ let oo_wrap env req f x =
       List.fold_left
         (fun lambda id ->
           Llet(StrictOpt, id,
-               Lprim(Pmakeblock(0, Mutable),
+               Lprim(Pmakeblock(0, Lambda.default_tag_info, Mutable),
                      [lambda_unit; lambda_unit; lambda_unit]),
                lambda))
         lambda !classes

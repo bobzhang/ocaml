@@ -38,7 +38,7 @@ let lapply func args loc =
   | _ ->
       Lapply(func, args, loc)
 
-let mkappl (func, args) = Lapply (func, args, Location.none);;
+let mkappl (func, args) = Lapply (func, args, Lambda.default_apply_info ());;
 
 let lsequence l1 l2 =
   if l2 = lambda_unit then l1 else Lsequence(l1, l2)
@@ -48,9 +48,9 @@ let lfield v i = Lprim(Pfield i, [Lvar v])
 let transl_label l = share (Const_immstring l)
 
 let transl_meth_list lst =
-  if lst = [] then Lconst (Const_pointer 0) else
+  if lst = [] then Lconst (Const_pointer (0, Lambda.NAPointer)) else
   share (Const_block
-            (0, List.map (fun lab -> Const_immstring lab) lst))
+            (0, Lambda.NA, List.map (fun lab -> Const_immstring lab) lst))
 
 let set_inst_var obj id expr =
   let kind = if Typeopt.maybe_pointer expr then Paddrarray else Pintarray in
@@ -236,7 +236,7 @@ let output_methods tbl methods lam =
       lsequence (mkappl(oo_prim "set_method", [Lvar tbl; lab; code])) lam
   | _ ->
       lsequence (mkappl(oo_prim "set_methods",
-                        [Lvar tbl; Lprim(Pmakeblock(0,Immutable), methods)]))
+                        [Lvar tbl; Lprim(Pmakeblock(0, Lambda.Array, Immutable), methods)]))
         lam
 
 let rec ignore_cstrs cl =
@@ -358,7 +358,7 @@ let rec build_class_init cla cstr super inh_init cl_init msubst top cl =
           (inh_init,
            Llet (Strict, inh,
                  mkappl(oo_prim "inherits", narrow_args @
-                        [lpath; Lconst(Const_pointer(if top then 1 else 0))]),
+                        [lpath; Lconst(Const_pointer ((if top then 1 else 0), Lambda.NAPointer))]),
                  Llet(StrictOpt, obj_init, lfield inh 0, cl_init)))
       | _ ->
           let core cl_init =
@@ -449,7 +449,7 @@ let transl_class_rebind ids cl vf =
   try
     let obj_init = Ident.create "obj_init"
     and self = Ident.create "self" in
-    let obj_init0 = lapply (Lvar obj_init) [Lvar self] Location.none in
+    let obj_init0 = lapply (Lvar obj_init) [Lvar self] (Lambda.default_apply_info ()) in
     let path, obj_init' = transl_class_rebind_0 self obj_init0 cl vf in
     if not (Translcore.check_recursive_lambda ids obj_init') then
       raise(Error(cl.cl_loc, Illegal_class_expr));
@@ -465,7 +465,7 @@ let transl_class_rebind ids cl vf =
     Strict, new_init, lfunction [obj_init] obj_init',
     Llet(
     Alias, cla, transl_normal_path path,
-    Lprim(Pmakeblock(0, Immutable),
+    Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
           [mkappl(Lvar new_init, [lfield cla 0]);
            lfunction [table]
              (Llet(Strict, env_init,
@@ -503,7 +503,7 @@ let rec builtin_meths self env env2 body =
     | Lprim(Parrayrefu _, [Lvar s; Lvar n]) when List.mem s self ->
         "var", [Lvar n]
     | Lprim(Pfield n, [Lvar e]) when Ident.same e env ->
-        "env", [Lvar env2; Lconst(Const_pointer n)]
+        "env", [Lvar env2; Lconst(Const_pointer (n, Lambda.NAPointer))]
     | Lsend(Self, met, Lvar s, [], _) when List.mem s self ->
         "meth", [met]
     | _ -> raise Not_found
@@ -524,7 +524,7 @@ let rec builtin_meths self env env2 body =
       ("meth_app_"^s, Lvar n :: args)
   | Lsend(Self, met, Lvar s, [], _) when List.mem s self ->
       ("get_meth", [met])
-  | Lsend(Public, met, arg, [], _) ->
+  | Lsend(Public _, met, arg, [], _) ->
       let s, args = conv arg in
       ("send_"^s, met :: args)
   | Lsend(Cached, met, arg, [_;_], _) ->
@@ -574,7 +574,7 @@ module M = struct
     | "send_env"   -> SendEnv
     | "send_meth"  -> SendMeth
     | _ -> assert false
-    in Lconst(Const_pointer(Obj.magic tag)) :: args
+    in Lconst(Const_pointer(Obj.magic tag, Lambda.NAPointer)) :: args
 end
 open M
 
@@ -722,11 +722,11 @@ let transl_class ids cl_id pub_meths cl vflag =
       Strict, env_init, mkappl (Lvar class_init, [Lvar table]),
       Lsequence(
       mkappl (oo_prim "init_class", [Lvar table]),
-      Lprim(Pmakeblock(0, Immutable),
+      Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
             [mkappl (Lvar env_init, [lambda_unit]);
              Lvar class_init; Lvar env_init; lambda_unit]))))
   and lbody_virt lenvs =
-    Lprim(Pmakeblock(0, Immutable),
+    Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
           [lambda_unit; Lfunction(Curried,[cla], cl_init); lambda_unit; lenvs])
   in
   (* Still easy: a class defined at toplevel *)
@@ -743,10 +743,10 @@ let transl_class ids cl_id pub_meths cl vflag =
   let lenv =
     let menv =
       if !new_ids_meths = [] then lambda_unit else
-      Lprim(Pmakeblock(0, Immutable),
+      Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
             List.map (fun id -> Lvar id) !new_ids_meths) in
     if !new_ids_init = [] then menv else
-    Lprim(Pmakeblock(0, Immutable),
+    Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
           menv :: List.map (fun id -> Lvar id) !new_ids_init)
   and linh_envs =
     List.map (fun (_, p) -> Lprim(Pfield 3, [transl_normal_path p]))
@@ -755,7 +755,7 @@ let transl_class ids cl_id pub_meths cl vflag =
   let make_envs lam =
     Llet(StrictOpt, envs,
          (if linh_envs = [] then lenv else
-         Lprim(Pmakeblock(0, Immutable), lenv :: linh_envs)),
+         Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), lenv :: linh_envs)),
          lam)
   and def_ids cla lam =
     Llet(StrictOpt, env2,
@@ -774,7 +774,7 @@ let transl_class ids cl_id pub_meths cl vflag =
     if inh_keys = [] then Llet(Alias, cached, Lvar tables, lam) else
     Llet(Strict, cached,
          mkappl (oo_prim "lookup_tables",
-                [Lvar tables; Lprim(Pmakeblock(0, Immutable), inh_keys)]),
+                [Lvar tables; Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), inh_keys)]),
          lam)
   and lset cached i lam =
     Lprim(Psetfield(i, true), [Lvar cached; lam])
@@ -799,7 +799,7 @@ let transl_class ids cl_id pub_meths cl vflag =
                        Lvar class_init; Lvar cached]))),
   make_envs (
   if ids = [] then mkappl (lfield cached 0, [lenvs]) else
-  Lprim(Pmakeblock(0, Immutable),
+  Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
         if concrete then
           [mkappl (lfield cached 0, [lenvs]);
            lfield cached 1;

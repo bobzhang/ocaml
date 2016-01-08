@@ -119,7 +119,7 @@ let split_default_wrapper fun_id kind params body =
         let inner_id = Ident.create (Ident.name fun_id ^ "_inner") in
         let map_param p = try List.assoc p map with Not_found -> p in
         let args = List.map (fun p -> Lvar (map_param p)) params in
-        let wrapper_body = Lapply (Lvar inner_id, args, Location.none) in
+        let wrapper_body = Lapply (Lvar inner_id, args, Lambda.default_apply_info ()) in
 
         let inner_params = List.map map_param params in
         let new_ids = List.map Ident.rename inner_params in
@@ -144,10 +144,10 @@ let split_default_wrapper fun_id kind params body =
 
 let prim_size prim args =
   match prim with
-    Pidentity -> 0
+  | (Pidentity | Pbytes_to_string | Pbytes_of_string | Pchar_to_int | Pchar_of_int | Pmark_ocaml_object) -> 0
   | Pgetglobal id -> 1
   | Psetglobal id -> 1
-  | Pmakeblock(tag, mut) -> 5 + List.length args
+  | Pmakeblock(tag, _, mut) -> 5 + List.length args
   | Pfield f -> 1
   | Psetfield(f, isptr) -> if isptr then 4 else 1
   | Pfloatfield f -> 1
@@ -155,8 +155,8 @@ let prim_size prim args =
   | Pduprecord _ -> 10 + List.length args
   | Pccall p -> (if p.prim_alloc then 10 else 4) + List.length args
   | Praise _ -> 4
-  | Pstringlength -> 5
-  | Pstringrefs | Pstringsets -> 6
+  | Pstringlength | Pbyteslength -> 5
+  | Pstringrefs | Pstringsets | Pbytesrefs | Pbytessets -> 6
   | Pmakearray kind -> 5 + List.length args
   | Parraylength kind -> if kind = Pgenarray then 6 else 2
   | Parrayrefu kind -> if kind = Pgenarray then 12 else 2
@@ -241,6 +241,7 @@ let rec is_pure_clambda = function
   | Uconst _ -> true
   | Uprim((Psetglobal _ | Psetfield _ | Psetfloatfield _ | Pduprecord _ |
            Pccall _ | Praise _ | Poffsetref _ | Pstringsetu | Pstringsets |
+           Pbytessetu | Pbytessets |
            Parraysetu _ | Parraysets _ | Pbigarrayset _), _, _) -> false
   | Uprim(p, args, _) -> List.for_all is_pure_clambda args
   | _ -> false
@@ -453,7 +454,7 @@ let field_approx n = function
 let simplif_prim_pure fpc p (args, approxs) dbg =
   match p, args, approxs with
   (* Block construction *)
-  | Pmakeblock(tag, Immutable), _, _ ->
+  | Pmakeblock(tag, _, Immutable), _, _ ->
       let field = function
         | Value_const c -> c
         | _ -> raise Exit
@@ -475,10 +476,10 @@ let simplif_prim_pure fpc p (args, approxs) dbg =
     when n < List.length ul ->
       (List.nth ul n, field_approx n approx)
   (* Strings *)
-  | Pstringlength, _, [ Value_const(Uconst_ref(_, Uconst_string s)) ] ->
+  | (Pstringlength | Pbyteslength), _, [ Value_const(Uconst_ref(_, Uconst_string s)) ] ->
       make_const_int (String.length s)
   (* Identity *)
-  | Pidentity, [arg1], [app1] ->
+  | (Pidentity | Pbytes_of_string | Pbytes_to_string | Pchar_to_int | Pchar_of_int | Pmark_ocaml_object), [arg1], [app1] ->
       (arg1, app1)
   (* Kind test *)
   | Pisint, _, [a1] ->
@@ -508,7 +509,7 @@ let simplif_prim fpc p (args, approxs as args_approxs) dbg =
     (* XXX : always return the same approxs as simplif_prim_pure? *)
     let approx =
       match p with
-      | Pmakeblock(_, Immutable) ->
+      | Pmakeblock(_, _, Immutable) ->
           Value_tuple (Array.of_list approxs)
       | _ ->
           Value_unknown
@@ -640,8 +641,8 @@ let rec bind_params_rec fpc subst params args body =
         let p1' = Ident.rename p1 in
         let u1, u2 =
           match Ident.name p1, a1 with
-          | "*opt*", Uprim(Pmakeblock(0, Immutable), [a], dbg) ->
-              a, Uprim(Pmakeblock(0, Immutable), [Uvar p1'], dbg)
+          | "*opt*", Uprim(Pmakeblock(0, tag_info, Immutable), [a], dbg) ->
+              a, Uprim(Pmakeblock(0, tag_info, Immutable), [Uvar p1'], dbg)
           | _ ->
               a1, Uvar p1'
         in
@@ -666,6 +667,7 @@ let rec is_pure = function
   | Lconst cst -> true
   | Lprim((Psetglobal _ | Psetfield _ | Psetfloatfield _ | Pduprecord _ |
            Pccall _ | Praise _ | Poffsetref _ | Pstringsetu | Pstringsets |
+           Pbytessetu | Pbytessets |
            Parraysetu _ | Parraysets _ | Pbigarrayset _), _) -> false
   | Lprim(p, args) -> List.for_all is_pure args
   | Levent(lam, ev) -> is_pure lam
@@ -791,8 +793,8 @@ let rec close fenv cenv = function
       let rec transl = function
         | Const_base(Const_int n) -> Uconst_int n
         | Const_base(Const_char c) -> Uconst_int (Char.code c)
-        | Const_pointer n -> Uconst_ptr n
-        | Const_block (tag, fields) ->
+        | Const_pointer (n,_) -> Uconst_ptr n
+        | Const_block (tag, _, fields) ->
             str (Uconst_block (tag, List.map transl fields))
         | Const_float_array sl ->
             (* constant float arrays are really immutable *)
@@ -818,7 +820,7 @@ let rec close fenv cenv = function
       let nargs = List.length args in
       begin match (close fenv cenv funct, close_list fenv cenv args) with
         ((ufunct, Value_closure(fundesc, approx_res)),
-         [Uprim(Pmakeblock(_, _), uargs, _)])
+         [Uprim(Pmakeblock(_,_,  _), uargs, _)])
         when List.length uargs = - fundesc.fun_arity ->
           let app = direct_apply fundesc funct ufunct uargs in
           (app, strengthen_approx app approx_res)
@@ -913,7 +915,7 @@ let rec close fenv cenv = function
       end
   | Lprim(Pdirapply loc,[funct;arg])
   | Lprim(Prevapply loc,[arg;funct]) ->
-      close fenv cenv (Lapply(funct, [arg], loc))
+      close fenv cenv (Lapply(funct, [arg], Lambda.default_apply_info ~loc ()))
   | Lprim(Pgetglobal id, []) as lam ->
       check_constant_result lam
                             (getglobal id)

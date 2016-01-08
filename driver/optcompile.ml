@@ -70,7 +70,7 @@ let implementation ppf sourcefile outputprefix =
       ast
       ++ print_if ppf Clflags.dump_parsetree Printast.implementation
       ++ print_if ppf Clflags.dump_source Pprintast.structure
-      ++ Typemod.type_implementation sourcefile outputprefix modulename env
+      ++ ( fun x -> let (a,b,c,_) = Typemod.type_implementation_more sourcefile outputprefix modulename env x in (a,b))
       ++ print_if ppf Clflags.dump_typedtree
         Printtyped.implementation_with_coercion
     in

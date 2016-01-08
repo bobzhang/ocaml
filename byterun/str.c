@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include "caml/alloc.h"
 #include "caml/fail.h"
+#include "caml/memory.h"
 #include "caml/mlvalues.h"
 #include "caml/misc.h"
 #ifdef HAS_LOCALE
@@ -48,6 +49,42 @@ CAMLprim value caml_create_string(value len)
     caml_invalid_argument("String.create");
   }
   return caml_alloc_string(size);
+}
+
+CAMLprim value caml_string_of_char_array(value char_array)
+{
+  CAMLparam1(char_array);
+  CAMLlocal1(res);
+  int i = 0; 
+  mlsize_t size = Wosize_val(char_array) ;
+
+  if (size > Bsize_wsize (Max_wosize) - 1){
+    caml_invalid_argument("String.of_char_array");
+  }
+
+  res = caml_alloc_string(size);
+  for(; i < size ; ++i){
+    Byte_u(res, i) = Int_val(Field(char_array,i));
+  }
+  CAMLreturn(res);
+}
+
+CAMLprim value caml_string_of_char_list(value char_list)
+{
+  CAMLparam1(char_list);
+  CAMLlocal2(res,l);
+  mlsize_t size = 0 ;
+  for(l = char_list; l!=Val_int(0); l = Field(l,1)) size++;
+  
+  if (size > Bsize_wsize (Max_wosize) - 1){
+    caml_invalid_argument("String.of_char_list");
+  }
+  res = caml_alloc_string(size);
+  for(size = 0, l = char_list; l!=Val_int(0); l = Field(l,1)){
+    Byte_u(res, size) = Int_val(Field(l,0));
+    ++size;
+  }
+  CAMLreturn(res);
 }
 
 CAMLprim value caml_string_get(value str, value index)
@@ -269,6 +306,14 @@ CAMLprim value caml_blit_string(value s1, value ofs1, value s2, value ofs2,
   memmove(&Byte(s2, Long_val(ofs2)), &Byte(s1, Long_val(ofs1)), Int_val(n));
   return Val_unit;
 }
+
+CAMLprim value caml_blit_bytes(value s1, value ofs1, value s2, value ofs2,
+                                value n)
+{
+  memmove(&Byte(s2, Long_val(ofs2)), &Byte(s1, Long_val(ofs1)), Int_val(n));
+  return Val_unit;
+}
+
 
 CAMLprim value caml_fill_string(value s, value offset, value len, value init)
 {

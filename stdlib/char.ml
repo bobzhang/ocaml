@@ -13,18 +13,15 @@
 
 (* Character operations *)
 
-external code: char -> int = "%identity"
-external unsafe_chr: int -> char = "%identity"
+external code: char -> int = "%char_to_int"
+external unsafe_chr: int -> char = "%char_of_int"
 
 let chr n =
   if n < 0 || n > 255 then invalid_arg "Char.chr" else unsafe_chr n
 
 external is_printable: char -> bool = "caml_is_printable"
 
-external string_create: int -> string = "caml_create_string"
-external string_unsafe_get : string -> int -> char = "%string_unsafe_get"
-external string_unsafe_set : string -> int -> char -> unit
-                           = "%string_unsafe_set"
+external string_of_char_array : char array -> string = "caml_string_of_char_array"
 
 let escaped = function
   | '\'' -> "\\'"
@@ -35,17 +32,14 @@ let escaped = function
   | '\b' -> "\\b"
   | c ->
     if is_printable c then begin
-      let s = string_create 1 in
-      string_unsafe_set s 0 c;
-      s
+      string_of_char_array [|c|]
     end else begin
       let n = code c in
-      let s = string_create 4 in
-      string_unsafe_set s 0 '\\';
-      string_unsafe_set s 1 (unsafe_chr (48 + n / 100));
-      string_unsafe_set s 2 (unsafe_chr (48 + (n / 10) mod 10));
-      string_unsafe_set s 3 (unsafe_chr (48 + n mod 10));
-      s
+      string_of_char_array [|'\\'; 
+                           (unsafe_chr (48 + n / 100));
+                           (unsafe_chr (48 + (n / 10) mod 10));
+                           (unsafe_chr (48 + n mod 10));
+                           |]
     end
 
 let lowercase c =

@@ -28,8 +28,32 @@ type loc_kind =
   | Loc_LOC
   | Loc_POS
 
+
+
+type tag_info = 
+  | Constructor of string
+  | Tuple
+  | Array
+  | Variant of string 
+  | Record 
+  | NA
+
+val default_tag_info : tag_info
+
+type pointer_info = 
+  | NullConstructor of string
+  | NullVariant of string 
+  | NAPointer 
+
+val default_pointer_info : pointer_info
+
 type primitive =
-    Pidentity
+  | Pidentity
+  | Pbytes_to_string
+  | Pbytes_of_string
+  | Pchar_to_int
+  | Pchar_of_int
+  | Pmark_ocaml_object
   | Pignore
   | Prevapply of Location.t
   | Pdirapply of Location.t
@@ -38,7 +62,7 @@ type primitive =
   | Pgetglobal of Ident.t
   | Psetglobal of Ident.t
   (* Operations on heap blocks *)
-  | Pmakeblock of int * mutable_flag
+  | Pmakeblock of int * tag_info * mutable_flag
   | Pfield of int
   | Psetfield of int * bool
   | Pfloatfield of int
@@ -47,7 +71,7 @@ type primitive =
   (* Force lazy values *)
   | Plazyforce
   (* External call *)
-  | Pccall of Primitive.description
+  | Pccall of Types.type_expr option Primitive.description
   (* Exceptions *)
   | Praise of raise_kind
   (* Boolean operations *)
@@ -65,7 +89,17 @@ type primitive =
   | Paddfloat | Psubfloat | Pmulfloat | Pdivfloat
   | Pfloatcomp of comparison
   (* String operations *)
-  | Pstringlength | Pstringrefu | Pstringsetu | Pstringrefs | Pstringsets
+  | Pstringlength 
+  | Pstringrefu 
+  | Pstringsetu
+  | Pstringrefs
+  | Pstringsets
+
+  | Pbyteslength
+  | Pbytesrefu
+  | Pbytessetu 
+  | Pbytesrefs
+  | Pbytessets
   (* Array operations *)
   | Pmakearray of array_kind
   | Parraylength of array_kind
@@ -154,8 +188,8 @@ and raise_kind =
 
 type structured_constant =
     Const_base of constant
-  | Const_pointer of int
-  | Const_block of int * structured_constant list
+  | Const_pointer of int * pointer_info
+  | Const_block of int * tag_info * structured_constant list
   | Const_float_array of string list
   | Const_immstring of string
 
@@ -171,15 +205,25 @@ type let_kind = Strict | Alias | StrictOpt | Variable
     StrictOpt: e does not have side-effects, but depend on the store;
       we can discard e if x does not appear in e'
     Variable: the variable x is assigned later in e' *)
+type public_info = string option  (* label name *)
 
-type meth_kind = Self | Public | Cached
+type meth_kind = Self | Public of public_info | Cached
 
 type shared_code = (int * int) list     (* stack size -> code label *)
 
+type apply_status = 
+  | NA
+  | Full 
+
+type apply_info = {
+    apply_loc : Location.t;
+    apply_status : apply_status;
+  }
+val default_apply_info :  ?loc:Location.t -> unit ->  apply_info
 type lambda =
     Lvar of Ident.t
   | Lconst of structured_constant
-  | Lapply of lambda * lambda list * Location.t
+  | Lapply of lambda * lambda list * apply_info
   | Lfunction of function_kind * Ident.t list * lambda
   | Llet of let_kind * Ident.t * lambda * lambda
   | Lletrec of (Ident.t * lambda) list * lambda

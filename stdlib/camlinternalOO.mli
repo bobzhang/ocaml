@@ -63,7 +63,7 @@ val create_object_opt : obj -> table -> obj
 val run_initializers : obj -> table -> unit
 val run_initializers_opt : obj -> obj -> table -> obj
 val create_object_and_run_initializers : obj -> table -> obj
-external send : obj -> tag -> t = "%send"
+(* external send : obj -> tag -> t = "%send" *)
 external sendcache : obj -> tag -> t -> int -> t = "%sendcache"
 external sendself : obj -> label -> t = "%sendself"
 external get_public_method : obj -> tag -> closure

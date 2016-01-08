@@ -1476,7 +1476,7 @@ let prim_obj_tag =
   {prim_name = "caml_obj_tag";
    prim_arity = 1; prim_alloc = false;
    prim_native_name = "";
-   prim_native_float = false}
+   prim_native_float = false ; prim_attributes = [] ; prim_ty = None }
 
 let get_mod_field modname field =
   lazy (
@@ -1548,11 +1548,11 @@ let inline_lazy_force_switch arg loc =
 let inline_lazy_force arg loc =
   if !Clflags.native_code then
     (* Lswitch generates compact and efficient native code *)
-    inline_lazy_force_switch arg loc
+    inline_lazy_force_switch arg (Lambda.default_apply_info ~loc ())
   else
     (* generating bytecode: Lswitch would generate too many rather big
        tables (~ 250 elts); conditionals are better *)
-    inline_lazy_force_cond arg loc
+    inline_lazy_force_cond arg (Lambda.default_apply_info ~loc ())
 
 let make_lazy_matching def = function
     [] -> fatal_error "Matching.make_lazy_matching"
@@ -1705,12 +1705,12 @@ let strings_test_threshold = 8
 let prim_string_notequal =
   Pccall{prim_name = "caml_string_notequal";
          prim_arity = 2; prim_alloc = false;
-         prim_native_name = ""; prim_native_float = false}
+         prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None}
 
 let prim_string_compare =
   Pccall{prim_name = "caml_string_compare";
          prim_arity = 2; prim_alloc = false;
-         prim_native_name = ""; prim_native_float = false}
+         prim_native_name = ""; prim_native_float = false; prim_attributes = [] ; prim_ty = None}
 
 let bind_sw arg k = match arg with
 | Lvar _ -> k arg
@@ -2971,9 +2971,9 @@ let compile_matching loc repr handler_fun arg pat_act_list partial =
 let partial_function loc () =
   (* [Location.get_pos_info] is too expensive *)
   let (fname, line, char) = Location.get_pos_info loc.Location.loc_start in
-  Lprim(Praise Raise_regular, [Lprim(Pmakeblock(0, Immutable),
+  Lprim(Praise Raise_regular, [Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable),
           [transl_normal_path Predef.path_match_failure;
-           Lconst(Const_block(0,
+           Lconst(Const_block(0, Lambda.default_tag_info,
               [Const_base(Const_string (fname, None));
                Const_base(Const_int line);
                Const_base(Const_int char)]))])])
@@ -3082,12 +3082,12 @@ let do_for_multiple_match loc paraml pat_act_list partial =
         let raise_num = next_raise_count () in
         raise_num,
         { cases = List.map (fun (pat, act) -> ([pat], act)) pat_act_list;
-          args = [Lprim(Pmakeblock(0, Immutable), paraml), Strict] ;
+          args = [Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), paraml), Strict] ;
           default = [[[omega]],raise_num] }
     | _ ->
         -1,
         { cases = List.map (fun (pat, act) -> ([pat], act)) pat_act_list;
-          args = [Lprim(Pmakeblock(0, Immutable), paraml), Strict] ;
+          args = [Lprim(Pmakeblock(0, Lambda.default_tag_info, Immutable), paraml), Strict] ;
           default = [] } in
 
   try

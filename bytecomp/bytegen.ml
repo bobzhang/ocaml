@@ -149,7 +149,7 @@ let rec size_of_lambda = function
       end
   | Llet(str, id, arg, body) -> size_of_lambda body
   | Lletrec(bindings, body) -> size_of_lambda body
-  | Lprim(Pmakeblock(tag, mut), args) -> RHS_block (List.length args)
+  | Lprim(Pmakeblock(tag, _, mut), args) -> RHS_block (List.length args)
   | Lprim (Pmakearray (Paddrarray|Pintarray), args) ->
       RHS_block (List.length args)
   | Lprim (Pmakearray Pfloatarray, args) -> RHS_floatblock (List.length args)
@@ -300,7 +300,7 @@ let comp_primitive p args =
     Pgetglobal id -> Kgetglobal id
   | Psetglobal id -> Ksetglobal id
   | Pintcomp cmp -> Kintcomp cmp
-  | Pmakeblock(tag, mut) -> Kmakeblock(List.length args, tag)
+  | Pmakeblock(tag, _, mut) -> Kmakeblock(List.length args, tag)
   | Pfield n -> Kgetfield n
   | Psetfield(n, ptr) -> Ksetfield n
   | Pfloatfield n -> Kgetfloatfield n
@@ -335,11 +335,11 @@ let comp_primitive p args =
   | Pfloatcomp Cgt -> Kccall("caml_gt_float", 2)
   | Pfloatcomp Cle -> Kccall("caml_le_float", 2)
   | Pfloatcomp Cge -> Kccall("caml_ge_float", 2)
-  | Pstringlength -> Kccall("caml_ml_string_length", 1)
-  | Pstringrefs -> Kccall("caml_string_get", 2)
-  | Pstringsets -> Kccall("caml_string_set", 3)
-  | Pstringrefu -> Kgetstringchar
-  | Pstringsetu -> Ksetstringchar
+  | Pstringlength | Pbyteslength  -> Kccall("caml_ml_string_length", 1)
+  | Pstringrefs | Pbytesrefs -> Kccall("caml_string_get", 2)
+  | Pstringsets | Pbytessets -> Kccall("caml_string_set", 3)
+  | Pstringrefu | Pbytesrefu -> Kgetstringchar
+  | Pstringsetu | Pbytessetu -> Ksetstringchar
   | Pstring_load_16(_) -> Kccall("caml_string_get16", 2)
   | Pstring_load_32(_) -> Kccall("caml_string_get32", 2)
   | Pstring_load_64(_) -> Kccall("caml_string_get64", 2)
@@ -555,13 +555,13 @@ let rec comp_expr env exp sz cont =
         in
         comp_init env sz decl_size
       end
-  | Lprim(Pidentity, [arg]) ->
+  | Lprim((Pidentity | Pbytes_to_string | Pbytes_of_string | Pchar_to_int | Pchar_of_int | Pmark_ocaml_object), [arg]) ->
       comp_expr env arg sz cont
   | Lprim(Pignore, [arg]) ->
       comp_expr env arg sz (add_const_unit cont)
   | Lprim(Pdirapply loc, [func;arg])
   | Lprim(Prevapply loc, [arg;func]) ->
-      let exp = Lapply(func, [arg], loc) in
+      let exp = Lapply(func, [arg], Lambda.default_apply_info ~loc ()) in
       comp_expr env exp sz cont
   | Lprim(Pnot, [arg]) ->
       let newcont =

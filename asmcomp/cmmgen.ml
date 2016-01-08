@@ -635,7 +635,7 @@ let rec expr_size env = function
       expr_size (Ident.add id (expr_size env exp) env) body
   | Uletrec(bindings, body) ->
       expr_size env body
-  | Uprim(Pmakeblock(tag, mut), args, _) ->
+  | Uprim(Pmakeblock(tag,_,  mut), args, _) ->
       RHS_block (List.length args)
   | Uprim(Pmakearray(Paddrarray | Pintarray), args, _) ->
       RHS_block (List.length args)
@@ -1020,7 +1020,7 @@ let check_bound unsafe dbg a1 a2 k =
 
 let default_prim name =
   { prim_name = name; prim_arity = 0 (*ignored*);
-    prim_alloc = true; prim_native_name = ""; prim_native_float = false }
+    prim_alloc = true; prim_native_name = ""; prim_native_float = false ; prim_attributes = [] ; prim_ty = None}
 
 let simplif_primitive_32bits = function
     Pbintofint Pint64 -> Pccall (default_prim "caml_int64_of_int")
@@ -1385,9 +1385,9 @@ let rec transl = function
       begin match (simplif_primitive prim, args) with
         (Pgetglobal id, []) ->
           Cconst_symbol (Ident.name id)
-      | (Pmakeblock(tag, mut), []) ->
+      | (Pmakeblock(tag, _, mut), []) ->
           assert false
-      | (Pmakeblock(tag, mut), args) ->
+      | (Pmakeblock(tag,_, mut), args) ->
           make_alloc tag (List.map transl args)
       | (Pccall prim, args) ->
           if prim.prim_native_float then
@@ -1555,7 +1555,7 @@ let rec transl = function
 and transl_prim_1 p arg dbg =
   match p with
   (* Generic operations *)
-    Pidentity ->
+  | (Pidentity | Pbytes_to_string | Pbytes_of_string | Pchar_to_int | Pchar_of_int | Pmark_ocaml_object) ->
       transl arg
   | Pignore ->
       return_unit(remove_unit (transl arg))
@@ -1607,7 +1607,7 @@ and transl_prim_1 p arg dbg =
   | Pabsfloat ->
       box_float(Cop(Cabsf, [transl_unbox_float arg]))
   (* String operations *)
-  | Pstringlength ->
+  | (Pstringlength | Pbyteslength) ->
       tag_int(string_length (transl arg))
   (* Array operations *)
   | Parraylength kind ->
@@ -1732,10 +1732,10 @@ and transl_prim_2 p arg1 arg2 dbg =
                   [transl_unbox_float arg1; transl_unbox_float arg2]))
 
   (* String operations *)
-  | Pstringrefu ->
+  | (Pstringrefu | Pbytesrefu) ->
       tag_int(Cop(Cload Byte_unsigned,
                   [add_int (transl arg1) (untag_int(transl arg2))]))
-  | Pstringrefs ->
+  | (Pstringrefs | Pbytesrefs) ->
       tag_int
         (bind "str" (transl arg1) (fun str ->
           bind "index" (untag_int (transl arg2)) (fun idx ->
@@ -1892,11 +1892,11 @@ and transl_prim_2 p arg1 arg2 dbg =
 and transl_prim_3 p arg1 arg2 arg3 dbg =
   match p with
   (* String operations *)
-    Pstringsetu ->
+  | (Pstringsetu | Pbytessetu) ->
       return_unit(Cop(Cstore Byte_unsigned,
                       [add_int (transl arg1) (untag_int(transl arg2));
                         untag_int(transl arg3)]))
-  | Pstringsets ->
+  | (Pstringsets | Pbytessets) ->
       return_unit
         (bind "str" (transl arg1) (fun str ->
           bind "index" (untag_int (transl arg2)) (fun idx ->
